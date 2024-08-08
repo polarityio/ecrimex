@@ -29,8 +29,7 @@ const doLookup = async (entities, options, cb) => {
   try {
     Logger.trace({ entities }, 'doLookup');
 
-    // Make network request
-    const apiResponse = await polarityRequest.request({
+    let requestOptions = {
       uri: `https://ecrimex.net/api/v1/malicious-domain/search`,
       method: 'POST',
       body: {
@@ -43,7 +42,14 @@ const doLookup = async (entities, options, cb) => {
         'Authorization': `${options.apiKey}`
       },
       json: true
-    });
+    };
+
+    if(options.activeOnly){
+      requestOptions.body.filters.status = 'active';
+    }
+
+    // Make network request
+    const apiResponse = await polarityRequest.request(requestOptions);
 
     Logger.trace({ apiResponse }, 'Lookup API Response');
 

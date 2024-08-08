@@ -38,6 +38,15 @@
       "type": "password",
       "userCanEdit": false,
       "adminOnly": true
+    },
+    {
+      "key": "activeOnly",
+      "name": "Return Active Indicators Only",
+      "description": "If enabled, the integration will only return indicators with a status of \"Active\".",
+      "default": false,
+      "type": "boolean",
+      "userCanEdit": false,
+      "adminOnly": true
     }
   ]
 }
