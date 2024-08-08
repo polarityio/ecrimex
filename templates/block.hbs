@@ -1,0 +1,66 @@
+<h1 class="p-title">{{fa-icon icon="globe" fixedWidth=true}}
+  Malicious Domain Information
+</h1>
+<div>
+  <span class="p-key">Classification:</span>
+  <span class="p-value">{{details.classification}}</span>
+</div>
+<div>
+  <span class="p-key">Confidence:</span>
+  <span class="p-value">{{details.confidence}}</span>
+</div>
+<div>
+  <span class="p-key">Status:</span>
+  <span class="p-value">{{details.status}}</span>
+</div>
+<div>
+  <span class="p-key">Discovered At:</span>
+  <span class="p-value">
+    {{moment-format
+      (unix details.discoveredAt)
+      "MM/DD/YYYY HH:mm:ss"
+      timeZone=timezone
+    }}
+  </span>
+</div>
+<div>
+  <span class="p-key">Created At:</span>
+  <span class="p-value">
+    {{moment-format
+      (unix details.createdAt)
+      "MM/DD/YYYY HH:mm:ss"
+      timeZone=timezone
+    }}
+  </span>
+</div>
+<div>
+  <span class="p-key">Updated At:</span>
+  <span class="p-value">
+    {{moment-format
+      (unix details.updatedAt)
+      "MM/DD/YYYY HH:mm:ss"
+      timeZone=timezone
+    }}
+  </span>
+</div>
+<div>
+  <span class="p-key">Submission Count:</span>
+  <span class="p-value">{{details.metadata.submissionCount}}</span>
+</div>
+{{#if (gt details.notes.length 0)}}
+  <div class="note-container">
+    <h1 class="p-title">{{fa-icon icon="sticky-note" fixedWidth=true}} Notes</h1>
+    {{#each details.notes as | note | }}
+      <div class="note">
+        <div class="note-description">{{note.description}}</div>
+        <div class="note-created p-footnote">
+          {{moment-format
+            (unix note.createdAt)
+            "MM/DD/YYYY HH:mm:ss"
+            timeZone=timezone
+         }}
+        </div>
+      </div>
+    {{/each}}
+  </div>
+{{/if}}
