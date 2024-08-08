@@ -1,0 +1,15 @@
+{
+  "main": "./integration.js",
+  "name": "ecrimex",
+  "version": "3.0.0",
+  "private": true,
+  "license": "MIT",
+  "author": "Polarity",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "async": "^3.2.5",
+    "postman-request": "^2.88.1-postman.38"
+  }
+}
