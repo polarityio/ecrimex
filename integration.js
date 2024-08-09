@@ -4,8 +4,12 @@ const { setLogger } = require('./src/logger');
 const { parseErrorToReadableJSON, ApiRequestError } = require('./src/errors');
 const polarityRequest = require('./src/polarity-request');
 const { createResultObject } = require('./src/create-result-object');
+const chunk = require('lodash.chunk');
+const async = require('async');
 
 const SUCCESS_CODES = [200];
+const MAX_ENTITY_CHUNKS_TO_LOOKUP_AT_ONCE = 2;
+const MAX_ENTITIES_PER_CHUNK = 10;
 
 let Logger = null;
 
@@ -14,68 +18,74 @@ const startup = (logger) => {
   setLogger(Logger);
 };
 
-/**
- * forEach entity
- *   MakeNetworkRequest1 -- Makes the network request, handles network errors only, returns raw network response
- *   HandleAPIErrors -- handles error handling of the API response
- *   CreateResultObject -- Handles any processing of the raw network response, creates a resultObject or resultMissObject
- *
- * @param entities
- * @param options
- * @param cb
- * @returns {Promise<void>}
- */
 const doLookup = async (entities, options, cb) => {
+  let lookupResults = [];
+
+  Logger.trace({ entities }, 'doLookup');
+
+  const entityChunks = chunk(entities, MAX_ENTITIES_PER_CHUNK);
+
   try {
-    Logger.trace({ entities }, 'doLookup');
+    await async.eachLimit(
+      entityChunks,
+      MAX_ENTITY_CHUNKS_TO_LOOKUP_AT_ONCE,
+      async (entityChunk) => {
+        const requestOptions = createRequestOptions(entityChunk, options);
 
-    let requestOptions = {
-      uri: `https://ecrimex.net/api/v1/malicious-domain/search`,
-      method: 'POST',
-      body: {
-        filters: {
-          domain: entities.map((entity) => entity.value.toLowerCase())
-        },
-        sorts: ['createdAt']
-      },
-      headers: {
-        'Authorization': `${options.apiKey}`
-      },
-      json: true
-    };
+        Logger.trace({ requestOptions }, 'Request Options');
 
-    if(options.activeOnly){
-      requestOptions.body.filters.status = 'active';
-    }
+        const apiResponse = await polarityRequest.request(requestOptions);
 
-    // Make network request
-    const apiResponse = await polarityRequest.request(requestOptions);
+        Logger.trace({ apiResponse }, 'Lookup API Response');
 
-    Logger.trace({ apiResponse }, 'Lookup API Response');
-
-    // Handle API errors
-    if (!SUCCESS_CODES.includes(apiResponse.statusCode)) {
-      throw new ApiRequestError(
-        `Unexpected status code ${apiResponse.statusCode} received when making request to the ECrimeX API`,
-        {
-          statusCode: apiResponse.statusCode,
-          requestOptions: apiResponse.requestOptions
+        if (!SUCCESS_CODES.includes(apiResponse.statusCode)) {
+          throw new ApiRequestError(
+            `Unexpected status code ${apiResponse.statusCode} received when making request to the ECrimeX API`,
+            {
+              statusCode: apiResponse.statusCode,
+              requestOptions: apiResponse.requestOptions
+            }
+          );
         }
-      );
-    }
 
-    // Create the Result Object
-    const lookupResults = createResultObject(entities, apiResponse.body);
-
-    Logger.trace({ lookupResults }, 'Lookup Results');
-
-    cb(null, lookupResults);
+        lookupResults = lookupResults.concat(
+          createResultObject(entities, apiResponse.body, options)
+        );
+      }
+    );
   } catch (error) {
     const errorAsPojo = parseErrorToReadableJSON(error);
     Logger.error({ error: errorAsPojo }, 'Error in doLookup');
-    cb(errorAsPojo);
+    return cb(errorAsPojo);
   }
+
+  Logger.trace({ lookupResults }, 'Lookup Results');
+  cb(null, lookupResults);
 };
+
+function createRequestOptions(entities, options) {
+  let requestOptions = {
+    uri: `https://ecrimex.net/api/v1/malicious-domain/search`,
+    method: 'POST',
+    body: {
+      filters: {
+        // Lookups into ECrimeX are case sensitive and exact match only
+        domain: entities.map((entity) => entity.value.toLowerCase())
+      },
+      sorts: ['createdAt']
+    },
+    headers: {
+      Authorization: `${options.apiKey}`
+    },
+    json: true
+  };
+
+  if (options.activeOnly) {
+    requestOptions.body.filters.status = 'active';
+  }
+
+  return requestOptions;
+}
 
 module.exports = {
   startup,

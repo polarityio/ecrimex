@@ -5,7 +5,7 @@ const { getLogger } = require('./logger');
  * @param apiResponse
  * @returns {*[]}
  */
-const createResultObject = (entities, apiResponse) => {
+const createResultObject = (entities, apiResponse, options) => {
   const lookupResults = [];
   entities.forEach((entity) => {
     const match = apiResponse.data.find(
@@ -15,7 +15,7 @@ const createResultObject = (entities, apiResponse) => {
       lookupResults.push({
         entity,
         data: {
-          summary: createSummary(match),
+          summary: createSummary(match, options),
           details: match
         }
       });
@@ -35,11 +35,20 @@ const createResultObject = (entities, apiResponse) => {
  * @param match
  * @returns {string[]}
  */
-const createSummary = (match) => {
+const createSummary = (match, options) => {
   const tags = [];
 
-  tags.push(`Status: ${match.status}`);
-  tags.push(`${match.classification}`);
+  // If the option to only return active matches is true, we don't show the status tag
+  // as it will always be "active"
+  if (!options.activeOnly) {
+    tags.push(`Status: ${match.status}`);
+  }
+
+  if (match.classification) {
+    tags.push(`${match.classification}`);
+  } else {
+    tags.push(`Unclassified`);
+  }
 
   return tags;
 };
