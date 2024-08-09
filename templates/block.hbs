@@ -3,7 +3,13 @@
 </h1>
 <div>
   <span class="p-key">Classification:</span>
-  <span class="p-value">{{details.classification}}</span>
+  <span class="p-value">
+    {{#if (gt details.classification.length 0)}}
+      {{details.classification}}
+    {{else}}
+      <span class="p-footnote">Not Classified</span>
+    {{/if}}
+  </span>
 </div>
 <div>
   <span class="p-key">Confidence:</span>

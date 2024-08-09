@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "async": "^3.2.5",
-    "postman-request": "^2.88.1-postman.38"
+    "postman-request": "^2.88.1-postman.38",
+    "lodash.chunk": "^4.2.0"
   }
 }
