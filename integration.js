@@ -87,7 +87,25 @@ function createRequestOptions(entities, options) {
   return requestOptions;
 }
 
+function validateOptions(userOptions, cb) {
+  let errors = [];
+
+  if (
+    typeof userOptions.apiKey.value !== 'string' ||
+    (typeof userOptions.apiKey.value === 'string' &&
+      userOptions.apiKey.value.length === 0)
+  ) {
+    errors.push({
+      key: 'apiKey',
+      message: 'You must provide a valid ECrimeX API key'
+    });
+  }
+
+  cb(null, errors);
+}
+
 module.exports = {
   startup,
-  doLookup
+  doLookup,
+  validateOptions
 };
