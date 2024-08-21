@@ -1,15 +1,17 @@
 'use strict';
 
-const { setLogger } = require('./src/logger');
-const { parseErrorToReadableJSON, ApiRequestError } = require('./src/errors');
-const polarityRequest = require('./src/polarity-request');
-const { createResultObject } = require('./src/create-result-object');
 const chunk = require('lodash.chunk');
 const async = require('async');
 
-const SUCCESS_CODES = [200];
-const MAX_ENTITY_CHUNKS_TO_LOOKUP_AT_ONCE = 2;
+const { setLogger } = require('./src/logger');
+const { parseErrorToReadableJSON, ApiRequestError } = require('./src/errors');
+const { createResultObjects } = require('./src/create-result-object');
+const { searchPhish } = require('./src/search-phish');
+const { searchMaliciousDomains } = require('./src/search-malicious-domains');
+const { SOURCE_MALICIOUS_DOMAIN, SOURCE_PHISH } = require('./src/sources');
+const MAX_TASKS_AT_A_TIME = 2;
 const MAX_ENTITIES_PER_CHUNK = 10;
+
 
 let Logger = null;
 
@@ -21,38 +23,35 @@ const startup = (logger) => {
 const doLookup = async (entities, options, cb) => {
   let lookupResults = [];
 
-  Logger.trace({ entities }, 'doLookup');
 
-  const entityChunks = chunk(entities, MAX_ENTITIES_PER_CHUNK);
+  const tasks = [];
+  const entitiesByType = splitEntitiesByTypeAndChunk(entities);
+
+  Logger.trace({ entitiesByType }, 'doLookup');
+
+  entitiesByType.domain.forEach((entityChunk) => {
+    tasks.push(async () => {
+      const maliciousDomainResults = await searchMaliciousDomains(entityChunk, options);
+      const domainResultObjects = createResultObjects(
+        entityChunk,
+        maliciousDomainResults,
+        SOURCE_MALICIOUS_DOMAIN,
+        options
+      );
+      lookupResults = lookupResults.concat(domainResultObjects);
+    });
+  });
+
+  entitiesByType.url.forEach((entityChunk) => {
+    tasks.push(async () => {
+      const phishResults = await searchPhish(entityChunk, options);
+      const urlResultObjects = createResultObjects(entityChunk, phishResults, SOURCE_PHISH, options);
+      lookupResults = lookupResults.concat(urlResultObjects);
+    });
+  });
 
   try {
-    await async.eachLimit(
-      entityChunks,
-      MAX_ENTITY_CHUNKS_TO_LOOKUP_AT_ONCE,
-      async (entityChunk) => {
-        const requestOptions = createRequestOptions(entityChunk, options);
-
-        Logger.trace({ requestOptions }, 'Request Options');
-
-        const apiResponse = await polarityRequest.request(requestOptions);
-
-        Logger.trace({ apiResponse }, 'Lookup API Response');
-
-        if (!SUCCESS_CODES.includes(apiResponse.statusCode)) {
-          throw new ApiRequestError(
-            `Unexpected status code ${apiResponse.statusCode} received when making request to the ECrimeX API`,
-            {
-              statusCode: apiResponse.statusCode,
-              requestOptions: apiResponse.requestOptions
-            }
-          );
-        }
-
-        lookupResults = lookupResults.concat(
-          createResultObject(entities, apiResponse.body, options)
-        );
-      }
-    );
+    await async.parallelLimit(tasks, MAX_TASKS_AT_A_TIME);
   } catch (error) {
     const errorAsPojo = parseErrorToReadableJSON(error);
     Logger.error({ error: errorAsPojo }, 'Error in doLookup');
@@ -63,28 +62,36 @@ const doLookup = async (entities, options, cb) => {
   cb(null, lookupResults);
 };
 
-function createRequestOptions(entities, options) {
-  let requestOptions = {
-    uri: `https://ecrimex.net/api/v1/malicious-domain/search`,
-    method: 'POST',
-    body: {
-      filters: {
-        // Lookups into ECrimeX are case sensitive and exact match only
-        domain: entities.map((entity) => entity.value.toLowerCase())
-      },
-      sorts: ['createdAt']
-    },
-    headers: {
-      Authorization: `${options.apiKey}`
-    },
-    json: true
+/**
+ * Takes an array of entities and splits the array up into a map of entities by entity type.
+ * Each type is a 2d array as we want to chunk up the entities so we're never looking up
+ * too many at one time.  For example, if the chunk size was 3, the output might look like this:
+ *
+ * {
+ *     domain: [[d1,d2,d3],[d4,d5,d6]],
+ *     url: [[url1, url2]]
+ * }
+ * @param entities
+ * @returns {{domain: *[], url: *[]}}
+ */
+function splitEntitiesByTypeAndChunk(entities) {
+  const entitiesByType = {
+    domain: [],
+    url: []
   };
 
-  if (options.activeOnly) {
-    requestOptions.body.filters.status = 'active';
-  }
+  entities.forEach((entity) => {
+    if (entity.isDomain) {
+      entitiesByType.domain.push(entity);
+    } else if (entity.isURL) {
+      entitiesByType.url.push(entity);
+    }
+  });
 
-  return requestOptions;
+  entitiesByType.domain = chunk(entitiesByType.domain, MAX_ENTITIES_PER_CHUNK);
+  entitiesByType.url = chunk(entitiesByType.url, MAX_ENTITIES_PER_CHUNK);
+
+  return entitiesByType;
 }
 
 function validateOptions(userOptions, cb) {

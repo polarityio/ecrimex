@@ -2,8 +2,8 @@ module.exports = {
   name: 'ECrimeX',
   acronym: 'ECX',
   description:
-    'Search the ECrimeX Malicious Domains repository for information on malicious domains',
-  entityTypes: ['domain'],
+    'Search the ECrimeX Malicious Domains and Phish repositories for information on malicious domains and phishing URLs',
+  entityTypes: ['domain', 'url'],
   styles: ['./styles/styles.less'],
   onDemandOnly: true,
   defaultColor: 'light-blue',
@@ -30,7 +30,7 @@ module.exports = {
       key: 'apiKey',
       name: 'ECrimeX API Key',
       description:
-        'API Key used to authenticate to ECrimeX.  The user account associated with the API Key must have access to the ECrimeX Malicious Domain dataset.',
+        'API Key used to authenticate to ECrimeX.  The user account associated with the API Key must have access to the ECrimeX Malicious Domain and Phish datasets.',
       default: '',
       type: 'password',
       userCanEdit: false,

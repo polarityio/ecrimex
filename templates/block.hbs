@@ -1,16 +1,31 @@
 <h1 class="p-title">{{fa-icon icon="globe" fixedWidth=true}}
-  Malicious Domain Information
+  {{#if (eq details.source "phish")}}
+    Phish Information
+  {{else}}
+    Malicious Domain Information
+  {{/if}}
 </h1>
-<div>
-  <span class="p-key">Classification:</span>
-  <span class="p-value">
-    {{#if (gt details.classification.length 0)}}
-      {{details.classification}}
-    {{else}}
-      <span class="p-footnote">Not Classified</span>
-    {{/if}}
-  </span>
-</div>
+
+{{#if (eq details.source "maliciousDomain")}}
+  <div>
+    <span class="p-key">Classification:</span>
+    <span class="p-value">
+      {{#if (gt details.classification.length 0)}}
+        {{details.classification}}
+      {{else}}
+        <span class="p-footnote">Not Classified</span>
+      {{/if}}
+    </span>
+  </div>
+{{/if}}
+
+{{#if details.brand}}
+  <div>
+    <span class="p-key">Brand:</span>
+    <span class="p-value">{{details.brand}}</span>
+  </div>
+{{/if}}
+
 <div>
   <span class="p-key">Confidence:</span>
   <span class="p-value">{{details.confidence}}</span>
@@ -69,4 +84,18 @@
       </div>
     {{/each}}
   </div>
+{{/if}}
+
+{{#if (gt details.ip.length 0)}}
+  <h1 class="p-title">{{fa-icon icon="network-wired" fixedWidth=true}} IP</h1>
+  {{#each details.ip as | ip |}}
+    <span class="tag">{{ip}}</span>
+  {{/each}}
+{{/if}}
+
+{{#if (gt details.asn.length 0)}}
+  <h1 class="p-title">{{fa-icon icon="globe" fixedWidth=true}} ASN</h1>
+  {{#each details.asn as | asn |}}
+    <span class="tag">{{asn}}</span>
+  {{/each}}
 {{/if}}
