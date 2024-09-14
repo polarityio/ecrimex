@@ -22,7 +22,8 @@ async function searchMaliciousDomains(entities, options) {
       `Unexpected status code ${apiResponse.statusCode} received when making request to the ECrimeX API`,
       {
         statusCode: apiResponse.statusCode,
-        requestOptions: apiResponse.requestOptions
+        requestOptions: apiResponse.requestOptions,
+        requestBody: apiResponse.body
       }
     );
   }

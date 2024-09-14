@@ -8,7 +8,8 @@ const { parseErrorToReadableJSON, ApiRequestError } = require('./src/errors');
 const { createResultObjects } = require('./src/create-result-object');
 const { searchPhish } = require('./src/search-phish');
 const { searchMaliciousDomains } = require('./src/search-malicious-domains');
-const { SOURCE_MALICIOUS_DOMAIN, SOURCE_PHISH } = require('./src/sources');
+const { searchMaliciousIps } = require('./src/search-malicious-ips');
+const { SOURCE_MALICIOUS_DOMAIN, SOURCE_PHISH, SOURCE_MALICIOUS_IP } = require('./src/sources');
 const MAX_TASKS_AT_A_TIME = 2;
 const MAX_ENTITIES_PER_CHUNK = 10;
 
@@ -50,6 +51,14 @@ const doLookup = async (entities, options, cb) => {
     });
   });
 
+  entitiesByType.ip.forEach((entityChunk) => {
+    tasks.push(async () => {
+      const ipResults = await searchMaliciousIps(entityChunk, options);
+      const ipResultsObjects = createResultObjects(entityChunk, ipResults, SOURCE_MALICIOUS_IP, options);
+      lookupResults = lookupResults.concat(ipResultsObjects);
+    });
+  });
+
   try {
     await async.parallelLimit(tasks, MAX_TASKS_AT_A_TIME);
   } catch (error) {
@@ -77,7 +86,8 @@ const doLookup = async (entities, options, cb) => {
 function splitEntitiesByTypeAndChunk(entities) {
   const entitiesByType = {
     domain: [],
-    url: []
+    url: [],
+    ip: []
   };
 
   entities.forEach((entity) => {
@@ -85,12 +95,15 @@ function splitEntitiesByTypeAndChunk(entities) {
       entitiesByType.domain.push(entity);
     } else if (entity.isURL) {
       entitiesByType.url.push(entity);
+    } else if (entity.isIP) {
+      entitiesByType.ip.push(entity);
     }
   });
 
   entitiesByType.domain = chunk(entitiesByType.domain, MAX_ENTITIES_PER_CHUNK);
   entitiesByType.url = chunk(entitiesByType.url, MAX_ENTITIES_PER_CHUNK);
-
+  entitiesByType.ip = chunk(entitiesByType.ip, MAX_ENTITIES_PER_CHUNK);
+  
   return entitiesByType;
 }
 

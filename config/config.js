@@ -3,7 +3,7 @@ module.exports = {
   acronym: 'ECX',
   description:
     'Search the ECrimeX Malicious Domains and Phish repositories for information on malicious domains and phishing URLs',
-  entityTypes: ['domain', 'url'],
+  entityTypes: ['domain', 'url', 'IPv4'],
   styles: ['./styles/styles.less'],
   onDemandOnly: true,
   defaultColor: 'light-blue',
