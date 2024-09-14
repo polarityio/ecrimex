@@ -1,5 +1,17 @@
 const { getLogger } = require('./logger');
-const { SOURCE_MALICIOUS_DOMAIN, SOURCE_PHISH } = require('./sources');
+const {
+  SOURCE_MALICIOUS_DOMAIN,
+  SOURCE_PHISH,
+  SOURCE_MALICIOUS_IP
+} = require('./sources');
+
+const titles = {
+  [SOURCE_PHISH]: 'Phish Information',
+  [SOURCE_MALICIOUS_IP]: 'Malicious IP Information',
+  [SOURCE_MALICIOUS_DOMAIN]: 'Malicious Domain Information'
+};
+
+const MAX_TAGS = 4;
 /**
  *
  * @param entities
@@ -9,17 +21,18 @@ const { SOURCE_MALICIOUS_DOMAIN, SOURCE_PHISH } = require('./sources');
 const createResultObjects = (entities, apiResponse, source, options) => {
   const lookupResults = [];
   entities.forEach((entity) => {
-    const match = apiResponse.data.find((result) =>
+    const matches = apiResponse.data.filter((result) =>
       isEntityMatch(entity, result, source)
     );
-    if (match) {
+    if (matches.length > 0) {
       lookupResults.push({
         entity,
         data: {
-          summary: createSummary(match, source, options),
+          summary: createSummary(matches, source, options),
           details: {
+            title: titles[source],
             source,
-            ...match
+            data: matches
           }
         }
       });
@@ -47,6 +60,9 @@ const isEntityMatch = (entity, result, source) => {
   if (source === SOURCE_MALICIOUS_DOMAIN) {
     return result.domain === entity.value;
   }
+  if (source === SOURCE_MALICIOUS_IP) {
+    return result.ip === entity.value;
+  }
 };
 
 /**
@@ -54,30 +70,56 @@ const isEntityMatch = (entity, result, source) => {
  * @param match
  * @returns {string[]}
  */
-const createSummary = (match, source, options) => {
-  const tags = [];
-
-  if (source === SOURCE_MALICIOUS_DOMAIN) {
-    if (match.classification) {
-      tags.push(`Malicious Domain: ${match.classification}`);
-    } else {
-      tags.push(`Malicious Domain: Unclassified`);
-    }
-  } else if (source === SOURCE_PHISH) {
-    if (match.brand) {
-      tags.push(`Phish URL: ${match.brand}`);
-    } else {
-      tags.push(`Phish URL: No brand`);
-    }
+const createSummary = (matches, source, options) => {
+  const tagSet = new Set();
+  let counts = {
+    "Malicious IP": 0,
+    "Malicious Domain": 0,
+    "Phish URL": 0
   }
+  
+  matches.forEach((match) => {
+    if (source === SOURCE_MALICIOUS_DOMAIN) {
+      if (match.classification) {
+        tagSet.add(`Malicious Domain: ${match.classification}`);
+      } else {
+        tagSet.add(`Malicious Domain: Unclassified`);
+      }
+      counts['Malicious Domain']++;
+    } else if (source === SOURCE_PHISH) {
+      if (match.brand) {
+        tagSet.add(`Phish URL: ${match.brand}`);
+      } else {
+        tagSet.add(`Phish URL: No brand`);
+      }
+      counts['Phish URL']++;
+    } else if (source === SOURCE_MALICIOUS_IP) {
+      if (match.brand) {
+        tagSet.add(`Malicious IP: ${match.brand}`);
+      } else {
+        tagSet.add(`Malicious IP: No brand`);
+      }
+      counts['Malicious IP']++;
+    }
 
-  // If the option to only return active matches is true, we don't show the status tag
-  // as it will always be "active"
-  if (!options.activeOnly) {
-    tags.push(`Status: ${match.status}`);
+    // If the option to only return active matches is true, we don't show the status tag
+    // as it will always be "active"
+    if (!options.activeOnly) {
+      tagSet.add(`Status: ${match.status}`);
+    }
+  });
+  
+  if (tagSet.size > MAX_TAGS) {
+    let tags = [];
+    for (let key in counts) {
+      if (counts[key] > 0) {
+        tags.push(`${key}: ${counts[key]} results`);
+      }
+    }
+    return tags;
+  } else {
+    return [...tagSet];
   }
-
-  return tags;
 };
 
 module.exports = {

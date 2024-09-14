@@ -1,101 +1,148 @@
-<h1 class="p-title">{{fa-icon icon="globe" fixedWidth=true}}
-  {{#if (eq details.source "phish")}}
-    Phish Information
-  {{else}}
-    Malicious Domain Information
+<div class="d-flex align-items-center justify-content-between">
+  <h1 class="header">
+    {{details.title}}
+  </h1>
+  {{#if (gt pagingData.length pageSize)}}
+    <div class="paging-info">
+      {{pagingStartItem}} - {{pagingEndItem}} of {{pagingData.length}}
+    </div>
   {{/if}}
-</h1>
-
-{{#if (eq details.source "maliciousDomain")}}
-  <div>
-    <span class="p-key">Classification:</span>
-    <span class="p-value">
-      {{#if (gt details.classification.length 0)}}
-        {{details.classification}}
-      {{else}}
-        <span class="p-footnote">Not Classified</span>
-      {{/if}}
-    </span>
-  </div>
-{{/if}}
-
-{{#if details.brand}}
-  <div>
-    <span class="p-key">Brand:</span>
-    <span class="p-value">{{details.brand}}</span>
-  </div>
-{{/if}}
-
-<div>
-  <span class="p-key">Confidence:</span>
-  <span class="p-value">{{details.confidence}}</span>
 </div>
-<div>
-  <span class="p-key">Status:</span>
-  <span class="p-value">{{details.status}}</span>
-</div>
-<div>
-  <span class="p-key">Discovered At:</span>
-  <span class="p-value">
-    {{moment-format
-      (unix details.discoveredAt)
-      "MM/DD/YYYY HH:mm:ss"
-      timeZone=timezone
-    }}
-  </span>
-</div>
-<div>
-  <span class="p-key">Created At:</span>
-  <span class="p-value">
-    {{moment-format
-      (unix details.createdAt)
-      "MM/DD/YYYY HH:mm:ss"
-      timeZone=timezone
-    }}
-  </span>
-</div>
-<div>
-  <span class="p-key">Updated At:</span>
-  <span class="p-value">
-    {{moment-format
-      (unix details.updatedAt)
-      "MM/DD/YYYY HH:mm:ss"
-      timeZone=timezone
-    }}
-  </span>
-</div>
-<div>
-  <span class="p-key">Submission Count:</span>
-  <span class="p-value">{{details.metadata.submissionCount}}</span>
-</div>
-{{#if (gt details.notes.length 0)}}
-  <div class="note-container">
-    <h1 class="p-title">{{fa-icon icon="sticky-note" fixedWidth=true}} Notes</h1>
-    {{#each details.notes as | note | }}
-      <div class="note">
-        <div class="note-description">{{note.description}}</div>
-        <div class="note-created p-footnote">
-          {{moment-format
-            (unix note.createdAt)
-            "MM/DD/YYYY HH:mm:ss"
-            timeZone=timezone
-         }}
+{{#each filteredData as | result index|}}
+  <div class="result-container">
+    <div class="sub-result-container">
+      <div class="d-flex align-items-center justify-content-between">
+        <h1 class="p-title mt-0">Result #{{add pagingStartItem index}}</h1>
+        <div>
+          <span class="p-value">{{humanize result.status}}</span>
         </div>
       </div>
-    {{/each}}
+      {{#if (eq result.source "maliciousDomain")}}
+        <div>
+          <span class="p-key">Classification:</span>
+          <span class="p-value">
+            {{#if (gt result.classification.length 0)}}
+              {{result.classification}}
+            {{else}}
+              <span class="p-footnote">Not Classified</span>
+            {{/if}}
+          </span>
+        </div>
+      {{/if}}
+      {{#if result.brand}}
+        <div>
+          <span class="p-key">Brand:</span>
+          <span class="p-value">{{result.brand}}</span>
+        </div>
+      {{/if}}
+      <div>
+        <span class="p-key">Confidence:</span>
+        <span class="p-value">{{result.confidence}}&#37;</span>
+      </div>
+
+      <div>
+        <span class="p-key">Submission Count:</span>
+        <span class="p-value">{{result.metadata.submissionCount}}</span>
+      </div>
+    </div>
+    
+    {{#if result.description}}
+      <div class="sub-result-container">
+        <h1 class="p-title">Description</h1>
+        <div class="p-value p-block">{{result.description}}</div>
+      </div>
+    {{/if}}
+    
+    <div class="sub-result-container">
+      <h1 class="p-title">Times</h1>
+      <div>
+        <span class="p-key">Discovered At:</span>
+        <span class="p-value">
+          {{moment-format
+                  (unix result.discoveredAt)
+                  "MM/DD/YYYY HH:mm:ss"
+                  timeZone=timezone
+          }}
+        </span>
+      </div>
+      <div>
+        <span class="p-key">Created At:</span>
+        <span class="p-value">
+          {{moment-format
+                  (unix result.createdAt)
+                  "MM/DD/YYYY HH:mm:ss"
+                  timeZone=timezone
+          }}
+        </span>
+      </div>
+      <div>
+        <span class="p-key">Updated At:</span>
+        <span class="p-value">
+          {{moment-format
+                  (unix result.updatedAt)
+                  "MM/DD/YYYY HH:mm:ss"
+                  timeZone=timezone
+          }}
+        </span>
+      </div>
+    </div>
+    
+    {{#if (gt result.notes.length 0)}}
+      <div class="sub-result-container">
+        <div class="note-container">
+          <h1 class="p-title">{{fa-icon icon="sticky-note" fixedWidth=true}} Notes</h1>
+          {{#each result.notes as | note | }}
+            <div class="note">
+              <div class="note-description">{{note.description}}</div>
+              <div class="note-created p-footnote">
+                {{moment-format
+                  (unix note.createdAt)
+                  "MM/DD/YYYY HH:mm:ss"
+                  timeZone=timezone
+                }}
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    {{/if}}
+    
+    {{#if (and (gt result.ip.length 0)(not-eq details.source "maliciousIp"))}}
+      <div class="sub-result-container">
+        <h1 class="p-title">IP</h1>
+        {{#each result.ip as | ip |}}
+          <span class="tag">{{ip}}</span>
+        {{/each}}
+      </div>
+    {{/if}}
+  
+    {{#if (gt result.asn.length 0)}}
+      <div class="sub-result-container">
+        <h1 class="p-title">ASN</h1>
+        {{#each result.asn as | asn |}}
+          <span class="tag">{{asn}}</span>
+        {{/each}}
+      </div>
+    {{/if}}
   </div>
-{{/if}}
-
-{{#if (gt details.ip.length 0)}}
-  <h1 class="p-title">{{fa-icon icon="network-wired" fixedWidth=true}} IP</h1>
-  {{#each details.ip as | ip |}}
-    <span class="tag">{{ip}}</span>
-  {{/each}}
-{{/if}}
-
-{{#if (gt details.asn.length 0)}}
-  <h1 class="p-title">{{fa-icon icon="globe" fixedWidth=true}} ASN</h1>
-  {{#each details.asn as | asn |}}
-    <span class="tag">{{asn}}</span>
-  {{/each}}
+{{/each}}
+{{!-- Paging component --}}
+{{#if (gt pagingData.length pageSize)}}
+  <div class="paging-bar">
+    <button class="btn paging-btn" {{action "firstPage"}} disabled={{isPrevButtonsDisabled}}>
+      {{fa-icon icon="angle-double-left" fixedWidth=false}}
+    </button>
+    <button class="btn paging-btn" {{action "prevPage"}} disabled={{isPrevButtonsDisabled}}>
+      {{fa-icon icon="angle-left" fixedWidth=false}}
+    </button>
+    <div class="paging-info">
+      {{pagingStartItem}} - {{pagingEndItem}} of {{pagingData.length}}
+    </div>
+    <button class="btn paging-btn" {{action "nextPage"}} disabled={{isNextButtonDisabled}}>
+      {{fa-icon icon="angle-right" fixedWidth=false}}
+    </button>
+    <button class="btn paging-btn" {{action "lastPage"}} disabled={{isNextButtonDisabled}}>
+      {{fa-icon icon="angle-double-right" fixedWidth=false}}
+    </button>
+  </div>
 {{/if}}

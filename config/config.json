@@ -5,7 +5,8 @@
   "description": "Search the ECrimeX Malicious Domains and Phish repositories for information on malicious domains and phishing URLs",
   "entityTypes": [
     "domain",
-    "url"
+    "url",
+    "IPv4"
   ],
   "styles": [
     "./styles/styles.less"

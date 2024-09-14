@@ -22,7 +22,8 @@ async function searchPhish(entities, options) {
       `Unexpected status code ${apiResponse.statusCode} received when making request to the ECrimeX API`,
       {
         statusCode: apiResponse.statusCode,
-        requestOptions: apiResponse.requestOptions
+        requestOptions: apiResponse.requestOptions,
+        requestBody: apiResponse.body
       }
     );
   }
@@ -41,7 +42,7 @@ function createRequestOptions(entities, options) {
         // include the trailing slash (or don't remove the trailing slash), you won't get a result for a URL
         // that is otherwise a match.  Due to this, we always lookup the URL both with and without a trailing slash.
         url: entities.reduce((accum, entity) => {
-          accum.push(entity.value.toLowerCase());
+          accum.push(entity.value);
           if (entity.value.endsWith('/')) {
             accum.push(entity.value.slice(0, -1));
           } else {
