@@ -17,7 +17,7 @@
           <span class="p-value">{{humanize result.status}}</span>
         </div>
       </div>
-      {{#if (eq result.source "maliciousDomain")}}
+      {{#if (eq details.source "maliciousDomain")}}
         <div>
           <span class="p-key">Classification:</span>
           <span class="p-value">
