@@ -9,10 +9,16 @@ const { createResultObjects } = require('./src/create-result-object');
 const { searchPhish } = require('./src/search-phish');
 const { searchMaliciousDomains } = require('./src/search-malicious-domains');
 const { searchMaliciousIps } = require('./src/search-malicious-ips');
-const { SOURCE_MALICIOUS_DOMAIN, SOURCE_PHISH, SOURCE_MALICIOUS_IP } = require('./src/sources');
+const { searchCrypto } = require('./src/search-crypto');
+
+const {
+  SOURCE_MALICIOUS_DOMAIN,
+  SOURCE_PHISH,
+  SOURCE_MALICIOUS_IP,
+  SOURCE_CRYPTOCURRENCY_ADDRESSES
+} = require('./src/sources');
 const MAX_TASKS_AT_A_TIME = 2;
 const MAX_ENTITIES_PER_CHUNK = 10;
-
 
 let Logger = null;
 
@@ -24,11 +30,10 @@ const startup = (logger) => {
 const doLookup = async (entities, options, cb) => {
   let lookupResults = [];
 
-
   const tasks = [];
   const entitiesByType = splitEntitiesByTypeAndChunk(entities);
 
-  Logger.trace({ entitiesByType }, 'doLookup');
+  Logger.trace({ entities, entitiesByType }, 'doLookup');
 
   entitiesByType.domain.forEach((entityChunk) => {
     tasks.push(async () => {
@@ -46,7 +51,12 @@ const doLookup = async (entities, options, cb) => {
   entitiesByType.url.forEach((entityChunk) => {
     tasks.push(async () => {
       const phishResults = await searchPhish(entityChunk, options);
-      const urlResultObjects = createResultObjects(entityChunk, phishResults, SOURCE_PHISH, options);
+      const urlResultObjects = createResultObjects(
+        entityChunk,
+        phishResults,
+        SOURCE_PHISH,
+        options
+      );
       lookupResults = lookupResults.concat(urlResultObjects);
     });
   });
@@ -54,8 +64,26 @@ const doLookup = async (entities, options, cb) => {
   entitiesByType.ip.forEach((entityChunk) => {
     tasks.push(async () => {
       const ipResults = await searchMaliciousIps(entityChunk, options);
-      const ipResultsObjects = createResultObjects(entityChunk, ipResults, SOURCE_MALICIOUS_IP, options);
+      const ipResultsObjects = createResultObjects(
+        entityChunk,
+        ipResults,
+        SOURCE_MALICIOUS_IP,
+        options
+      );
       lookupResults = lookupResults.concat(ipResultsObjects);
+    });
+  });
+
+  entitiesByType.crypto.forEach((entityChunk) => {
+    tasks.push(async () => {
+      const cryptoResults = await searchCrypto(entityChunk, options);
+      const cryptoResultObjects = createResultObjects(
+        entityChunk,
+        cryptoResults,
+        SOURCE_CRYPTOCURRENCY_ADDRESSES,
+        options
+      );
+      lookupResults = lookupResults.concat(cryptoResultObjects);
     });
   });
 
@@ -87,7 +115,8 @@ function splitEntitiesByTypeAndChunk(entities) {
   const entitiesByType = {
     domain: [],
     url: [],
-    ip: []
+    ip: [],
+    crypto: []
   };
 
   entities.forEach((entity) => {
@@ -97,13 +126,16 @@ function splitEntitiesByTypeAndChunk(entities) {
       entitiesByType.url.push(entity);
     } else if (entity.isIP) {
       entitiesByType.ip.push(entity);
+    } else if (entity.types.indexOf('custom.crypto') >= 0) {
+      entitiesByType.crypto.push(entity);
     }
   });
 
   entitiesByType.domain = chunk(entitiesByType.domain, MAX_ENTITIES_PER_CHUNK);
   entitiesByType.url = chunk(entitiesByType.url, MAX_ENTITIES_PER_CHUNK);
   entitiesByType.ip = chunk(entitiesByType.ip, MAX_ENTITIES_PER_CHUNK);
-  
+  entitiesByType.crypto = chunk(entitiesByType.crypto, MAX_ENTITIES_PER_CHUNK);
+
   return entitiesByType;
 }
 

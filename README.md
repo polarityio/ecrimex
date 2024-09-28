@@ -1,8 +1,8 @@
 # Polarity ECrimeX Integration
 
-The Polarity ECrimeX integration searches the Anti-Phishing Working Group's (APWG) ECrimeX malicious domain, malicious IP, and phish URL dataset.
+The Polarity ECrimeX integration searches the Anti-Phishing Working Group's (APWG) ECrimeX malicious domain, malicious IP, phish URL, and cryptocurrency addresses dataset.
 
-Domains are looked up against the malicious domain dataset, URLs are looked up against the Phish dataset, and IPv4 addresses are looked up against the Malicious IP dataset.
+Domains are looked up against the malicious domain dataset, URLs are looked up against the Phish dataset, IPv4 addresses are looked up against the Malicious IP dataset, and Cryptocurrency addresses are looked up against the Cryptocurrency Addresses dataset.
 
 To learn more about ECrimeX, visit the [official website](https://apwg.org/ecx/).
 
