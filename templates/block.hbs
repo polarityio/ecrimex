@@ -35,11 +35,54 @@
           <span class="p-value">{{result.brand}}</span>
         </div>
       {{/if}}
-      <div>
-        <span class="p-key">Confidence:</span>
-        <span class="p-value">{{result.confidence}}&#37;</span>
-      </div>
-
+      {{#if result.currency}}
+        <div>
+          <span class="p-key">Currency:</span>
+          <span class="p-value">{{result.currency}}</span>
+        </div>
+      {{/if}}
+      {{#if result.source}}
+        <div>
+          <span class="p-key">Source:</span>
+          <span class="p-value">{{result.source}}</span>
+        </div>
+      {{/if}}
+      {{#if result.price}}
+        <div>
+          <span class="p-key">Price:</span>
+          <span class="p-value">{{result.price}}</span>
+        </div>
+      {{/if}}
+      {{#if result.crimeCategory}}
+        <div>
+          <span class="p-key">Crime Category:</span>
+          <span class="p-value">{{result.crimeCategory}}</span>
+        </div>
+      {{/if}}
+      {{#if result.actorCategory}}
+        <div>
+          <span class="p-key">Actor Category:</span>
+          <span class="p-value">{{result.actorCategory}}</span>
+        </div>
+      {{/if}}
+      {{#if result.siteLink}}
+        <div>
+          <span class="p-key">Site Link:</span>
+          <span class="p-value">{{result.siteLink}}</span>
+        </div>
+      {{/if}}
+      {{#if result.procedure}}
+        <div>
+          <span class="p-key">Procedure:</span>
+          <span class="p-value">{{result.procedure}}</span>
+        </div>
+      {{/if}}
+      {{#if result.confidence}}
+        <div>
+          <span class="p-key">Confidence:</span>
+          <span class="p-value">{{result.confidence}}&#37;</span>
+        </div>
+      {{/if}}
       <div>
         <span class="p-key">Submission Count:</span>
         <span class="p-value">{{result.metadata.submissionCount}}</span>

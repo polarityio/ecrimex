@@ -4,6 +4,12 @@ module.exports = {
   description:
     'Search the ECrimeX Malicious Domains and Phish repositories for information on malicious domains and phishing URLs',
   entityTypes: ['domain', 'url', 'IPv4'],
+  customTypes: [
+    {
+      key: 'crypto',
+      regex: /\b[a-zA-Z0-9]{32,64}\b/
+    }
+  ],
   styles: ['./styles/styles.less'],
   onDemandOnly: true,
   defaultColor: 'light-blue',
